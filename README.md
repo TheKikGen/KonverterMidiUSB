@@ -18,8 +18,9 @@ Before compiling, you must install the USB Host libray from the Arduino IDE, and
 https://github.com/TheKikGen/midiXparser/archive/master.zip
 
 Assemble the Uno Host shield, and Midi shield, then upload the firmware to the Uno.
+For greater simplicity, the HEX files compiled from the latest version are provided to be used with AVRDude.
 
 Plug an USB keyboard in the host shield, a midi cable to the midi out and to a synth.
 You are now able to use your favorite USB midi keyboard with any standard midi DIN device.
-For greater simplicity, the HEX files compiled from the latest version are available.
+
 
