@@ -6,6 +6,9 @@ This project based on Arduino Uno allows you to get a very economical USB MIDI c
 The necessary components are as follows:
 - An Arduino Uno
 - An Arduino USB Host shield
+
+![](https://d1xahwiwo4b49p.cloudfront.net/2538-large_default/usb-host-shield-support-google-android-adk-arduino.jpg)
+
 - An Arduino  Midi shield (the simplest version)
 
 Before compiling, you must install the USB Host libray from the Arduino IDE.
