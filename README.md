@@ -11,6 +11,8 @@ The necessary components are as follows:
 
 - An Arduino  Midi shield (the simplest version)
 
+![](https://www.google.fr/url?sa=i&source=images&cd=&ved=2ahUKEwjTj46b_qTjAhWIkxQKHSz1CU0QjRx6BAgBEAU&url=http%3A%2F%2Fgilles.thebault.free.fr%2Fspip.php%3Farticle54&psig=AOvVaw3KSrMTAAPDyTYYDcJU-C6-&ust=1562663726037331)
+
 Before compiling, you must install the USB Host libray from the Arduino IDE.
 Assemble the Uno Host shield, and Midi shield, then upload the firmware to the Uno.
 
