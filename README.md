@@ -13,7 +13,10 @@ The necessary components are as follows:
 
 ![](http://img.banggood.com/thumb/water/oaupload/banggood/images/5E/59/01090afa-5632-4006-882b-e7f50ffca98d.jpg)
 
-Before compiling, you must install the USB Host libray from the Arduino IDE.
+Before compiling, you must install the USB Host libray from the Arduino IDE, and copy the midiXParser library to your own Arduino/libraries path.
+
+https://github.com/TheKikGen/midiXparser/archive/master.zip
+
 Assemble the Uno Host shield, and Midi shield, then upload the firmware to the Uno.
 
 Plug an USB keyboard in the host shield, a midi cable to the midi out and to a synth.
