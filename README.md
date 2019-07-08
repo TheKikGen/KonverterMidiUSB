@@ -21,5 +21,5 @@ Assemble the Uno Host shield, and Midi shield, then upload the firmware to the U
 
 Plug an USB keyboard in the host shield, a midi cable to the midi out and to a synth.
 You are now able to use your favorite USB midi keyboard with any standard midi DIN device.
-
+For greater simplicity, the HEX files compiled from the latest version are available.
 
