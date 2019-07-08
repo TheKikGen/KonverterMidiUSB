@@ -1,7 +1,7 @@
 # KonverterMidiUSB
 USB to Serial Midi bidrectionnal converter
 
-This project based on Arduino Uno allows you to have a very economical USB MIDI converter, without any soldering.
+This project based on Arduino Uno allows you to get a very economical USB MIDI converter, without any soldering.
 
 The necessary components are as follows:
 - An Arduino Uno
