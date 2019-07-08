@@ -4,6 +4,14 @@
  * Franck Touanen. 2018.  
  * Inspired from a sample code by Yuuichi Akagawa.
  *******************************************************************************
+ 
+ TESTED AND WORKING WITH :
+ - Arduino UNO genuine and clones
+ - USB_Host_Shield_2.0 official library
+ - Keyes SUB host shield (www.funduino.com)
+
+ You need to deploy the midiXParser library into your Aruino library directory.
+ Download is here : https://github.com/TheKikGen/midiXparser 
  */
 
 #include <midiXparser.h>
@@ -13,26 +21,18 @@
 // Midi serial parser
 midiXparser midiSerial;
 
-
-// =================================================================================
-// GENERIC DEFINES & GLOBALS
-// =================================================================================
-
-// It seems that with USB shield, the LED is inoperant.
 #define LED 13
 
 USB Usb;
 USBH_MIDI usbMidi(&Usb);
 
-// =================================================================================
-// MAIN START HERE
-// =================================================================================
 
 //////////////////////////////////////////////////////////////////////////////
 // Scan and parse sysex flows
 // ----------------------------------------------------------------------------
 // We use the midiXparser 'on the fly' mode, allowing to tag bytes as "captured"
 // when they belong to a midi SYSEX message, without storing them in a buffer.
+// In that way, we can proceed infinite sysex size !
 // SYSEX Error (not correctly terminated by 0xF7 for example) are cleaned up,
 // to restore a correct parsing state.
 ///////////////////////////////////////////////////////////////////////////////
@@ -43,15 +43,11 @@ void scanMidiSerialSysExToUsb( midiXparser* serialMidiParser ) {
   static uint8_t packetLen = 0 ;
 
   byte readByte = serialMidiParser->getByte();
-
+  
   // Normal End of SysEx or : End of SysEx with error.
   // Force clean end of SYSEX as the midi usb driver
   // will not understand if we send the packet as is
-  if ( readByte == midiXparser::eoxStatus || serialMidiParser->isSysExError() ) {
-      // Force the eox byte in case we have a SYSEX error.
-      // In case of eror, the readbyte is already parsed by SerialMidiParser here,
-      // so we don't loose it.
-
+  if ( serialMidiParser->wasSysExMode() ) {
       packetLen++;
       MIDIPacket[packetLen] = midiXparser::eoxStatus;
 
@@ -62,24 +58,27 @@ void scanMidiSerialSysExToUsb( midiXparser* serialMidiParser ) {
       packetLen = 0;
       memset(MIDIPacket,0,4);
 
-  }
-
-  // Stop if not in sysexmode anymore here !
-  // The SYSEX error could be caused by another SOX, or Midi status...,
-  if ( ! serialMidiParser->isSysExMode() ) return;
+      return;
+  } else
 
   // Fill USB sysex packet
-  packetLen++;
-  MIDIPacket[packetLen] = readByte ;
+  if ( serialMidiParser->isSysExMode() ) {
+    packetLen++;
+    MIDIPacket[packetLen] = readByte ;  
 
-  // Packet complete ?
-  if (packetLen == 3 ) {
-      MIDIPacket[0] =  4 ; // Sysex start or continue
-      usbMidi.SendRawData(4,MIDIPacket);
-      packetLen = 0;
-      memset(MIDIPacket,0,4);
+    // Packet complete ?
+    if (packetLen == 3 ) {
+        MIDIPacket[0] =  4 ; // Sysex start or continue
+        usbMidi.SendRawData(4,MIDIPacket);
+        packetLen = 0;
+        memset(MIDIPacket,0,4);
+    }
+
   }
+    
 }
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Scan Serial port for MIDI data
 // ----------------------------------------------------------------------------
@@ -88,26 +87,39 @@ void scanMidiSerialSysExToUsb( midiXparser* serialMidiParser ) {
 void serialMidiPoll() {
 
   if (Serial.available() ) {
-    if (midiSerial.parse( Serial.read() ) ) {
+    digitalWrite(LED,HIGH);
+
+    // Echo to Midi OUT serial. No need to parse
+    byte readByte = Serial.read();
+    Serial.write(readByte);
+    
+    // Parsing is for USB
+    if (midiSerial.parse( readByte ) ) {
+
+        // We manage sysEx "on the fly". Clean end of a sysexe msg ?
+        if ( midiSerial.getMidiMsgType() == midiXparser::sysExMsgTypeMsk )
+          scanMidiSerialSysExToUsb(&midiSerial) ;
+
+        else // Not a sysex. The message is complete.
           usbMidi.SendData(midiSerial.getMidiMsg());
     }
     else
-    // Check if a SYSEX msg is currently sent or terminated
-    // as we proceed on the fly.
-    if ( midiSerial.isByteCaptured() &&
-          ( midiSerial.isSysExMode() ||
-            midiSerial.getByte() == midiXparser::eoxStatus ||
-            midiSerial.isSysExError()  ) )
-    {
-            // Process for eventual SYSEX unbuffered on the fly
-            scanMidiSerialSysExToUsb(&midiSerial) ;
+    // Acknowledge any sysex error
+    if ( midiSerial.isSysExError() )
+        scanMidiSerialSysExToUsb(&midiSerial) ;
+    else
+    // Check if a SYSEX mode active and send bytes on the fly.
+      if ( midiSerial.isSysExMode() && midiSerial.isByteCaptured() ) {
+        scanMidiSerialSysExToUsb(&midiSerial) ;
     }
+   
   }
 }
+
 ///////////////////////////////////////////////////////////////////////////////
 // Read a MIDI USB event and send it to the USART.
 // ----------------------------------------------------------------------------
-// USB MIDI will do all the parsing stuff for us.
+// USB MIDI will do all the parsing stuff for us. Including sysex.
 // We just need to get the length of the MIDI message embedded in the packet
 // ex : Note-on message on virtual cable 1 (CN=0x1; CIN=0x9) 	19 9n kk vv => 9n kk vv
 ///////////////////////////////////////////////////////////////////////////////
@@ -147,17 +159,21 @@ void usbMidiPoll()
   uint8_t   p = 0;
   uint16_t  rcvd;
 
+  
   if ( usbMidi.RecvData( &rcvd, recvBuf) != 0 ) return;
 
   while (p < MIDI_EVENT_PACKET_SIZE)  { 
     if ( recvBuf[p] == 0 && recvBuf[p+1] == 0 ) return ;   
     sendUSBMidiToSerial(&recvBuf[p]);        
     p += 4;
+    serialMidiPoll();  // Let a chance to serial here if several packets received
   }
 }
-
-
-// Delay time (max 16383 us)
+///////////////////////////////////////////////////////////////////////////////
+// Generate a microsec delay
+// ----------------------------------------------------------------------------
+// Delay time max is 16383 us
+///////////////////////////////////////////////////////////////////////////////
 void uSecDelay(unsigned long t1, unsigned long t2, unsigned long delayTime)
 {
   unsigned long t3;
@@ -173,15 +189,20 @@ void uSecDelay(unsigned long t1, unsigned long t2, unsigned long delayTime)
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// SETUP
+// ----------------------------------------------------------------------------
+///////////////////////////////////////////////////////////////////////////////
+
 void setup()
 {
 
   Serial.begin(31250);      // Midi baud rate
-  midiSerial.setMidiChannelFilter(midiXparser::allChannel);
-  midiSerial.setMidiMsgFilter( midiXparser::allMidiMsg );
-  midiSerial.setSysExFilter(true,0); // Sysex on the fly
+ // midiSerial.setMidiChannelFilter(midiXparser::allChannel);
+  midiSerial.setMidiMsgFilter( midiXparser::allMsgTypeMsk );
+ // midiSerial.setSysExFilter(true,0); // Sysex on the fly
 
-
+   digitalWrite(LED,HIGH);
   // Initialize USB. Plug and play approach.
     while (Usb.Init() == -1 ) {
     usbMidi.Release();
@@ -192,17 +213,23 @@ void setup()
 
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// LOOP
+// ----------------------------------------------------------------------------
+///////////////////////////////////////////////////////////////////////////////
 void loop()
 {
-  unsigned long t1;
+  
   Usb.Task();
-  t1 = micros();
+  unsigned long t1 = micros();
+  
   if ( Usb.getUsbTaskState() == USB_STATE_RUNNING )
   {
-    usbMidiPoll();
-    serialMidiPoll();
+    serialMidiPoll();  
+    usbMidiPoll();  // NB : Includes also a serialMidiPoll() call.
   }
   //delay(1ms)
   uSecDelay(t1, micros(), 1000);
+  digitalWrite(LED,LOW);
 
 }
