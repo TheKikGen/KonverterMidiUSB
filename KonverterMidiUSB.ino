@@ -1,7 +1,7 @@
 /*
  *******************************************************************************
  * Serial MIDI and USB Host bidirectional converter
- * Franck Touanen. 2018.  
+ * TheKikGen Labs. 2018.  
  * Inspired from a sample code by Yuuichi Akagawa.
  *******************************************************************************
  
