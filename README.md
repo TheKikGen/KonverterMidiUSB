@@ -1,5 +1,5 @@
 # KonverterMidiUSB Host
-USB to Serial Midi bidrectionnal converter
+USB to Serial Midi DIN bidrectionnal converter
 
 This project based on Arduino Uno allows you to get a very economical USB MIDI converter, without any soldering.
 
