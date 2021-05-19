@@ -25,5 +25,6 @@ For greater simplicity, the HEX files compiled from the latest version are provi
 
 Plug an USB keyboard in the host shield, a midi cable to the midi out and to a synth.
 You are now able to use your favorite USB midi keyboard with any standard midi DIN device.
+NB : The MIDI DIN IN is echoed to the MIDI DIN OUT (THRU MODE)
 
 
