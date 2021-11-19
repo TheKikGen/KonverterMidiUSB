@@ -9,7 +9,7 @@ The necessary components are as follows:
 - An Arduino Uno
 - An Arduino USB Host shield
 
-![](https://d1xahwiwo4b49p.cloudfront.net/2538-large_default/usb-host-shield-support-google-android-adk-arduino.jpg)
+![](https://i.ebayimg.com/images/g/kFYAAOSwpdpVXaxs/s-l300.jpg)
 
 - An Arduino  Midi shield (the simplest version)
 
